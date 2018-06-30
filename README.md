@@ -77,6 +77,16 @@ dbschema --tag db1
 dbschema --tag db1 --rollback migration1
 ```
 
+### Dry Run
+dbschema can be run with a dry run flag to list the migrations that would be applied or rollbacks that would be executed if executed.
+
+```bash
+# Dry run the migrations to list which migrations would be applied
+dbachema --tag db1 --dry-run
+# Dry run rolling back a migration
+dbschema --tag db1 --dry-run --rollback migration1
+```
+
 ## Example
 
 ```bash

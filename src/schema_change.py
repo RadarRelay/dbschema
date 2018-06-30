@@ -216,7 +216,7 @@ def get_migrations_applied(engine, connection):
             'The table `migrations_applied` is missing. Please refer to the project documentation at https://github.com/gabfl/dbschema.')
 
 
-def apply_migrations(engine, connection, path):
+def apply_migrations(engine, connection, path, dry_run=False):
     """
         Apply all migrations in a chronological order
     """
@@ -234,6 +234,12 @@ def apply_migrations(engine, connection, path):
         if is_applied(migrations_applied, basename):
             continue
 
+        # The migration has not been applied but user would like to only
+        # be notified since this is a dry run
+        if dry_run:
+            print('   Migration %s would be applied' % (basename))
+            continue
+
         # Get migration source
         source = get_migration_source(file)
         # print (source);
@@ -248,12 +254,15 @@ def apply_migrations(engine, connection, path):
         print('   -> Migration `%s` applied' % (basename))
 
     # Log
-    print(' * Migrations applied')
+    if dry_run:
+        print(' * Dry run complete')
+    else:
+        print(' * Migrations applied')
 
     return True
 
 
-def rollback_migration(engine, connection, path, migration_to_rollback):
+def rollback_migration(engine, connection, path, migration_to_rollback, dry_run=False):
     """
         Rollback a migration
     """
@@ -265,6 +274,12 @@ def rollback_migration(engine, connection, path, migration_to_rollback):
     if not is_applied(migrations_applied, migration_to_rollback):
         raise RuntimeError(
             '`%s` is not in the list of previously applied migrations.' % (migration_to_rollback))
+
+    # The migration would be rolled back but user would like to only
+    # be notified since this is a dry run
+    if dry_run:
+        print('   Migration %s would be rolled back' % (migration_to_rollback))
+        return True
 
     # Rollback file
     file = path + migration_to_rollback + '/down.sql'
@@ -314,7 +329,7 @@ def get_ssl(database):
     return ssl
 
 
-def apply(config_override=None, tag_override=None, rollback=None, skip_missing=None):
+def apply(config_override=None, tag_override=None, rollback=None, skip_missing=None, dry_run=None):
     """
         Look thru migrations and apply them
     """
@@ -358,21 +373,22 @@ def apply(config_override=None, tag_override=None, rollback=None, skip_missing=N
             engine, host, user, port, password, db, get_ssl(databases[tag]))
 
         # Run pre migration queries
-        if pre_migration:
+        if pre_migration and not dry_run:
             run_migration(connection, pre_migration)
 
         if rollback:
-            print(' * Rolling back %s (`%s` on %s)' % (tag, db, engine))
+            print(' * %s on %s (`%s` on %s)' %
+                  ('Performing dry run of roll back' if dry_run else 'Rolling back', tag, db, engine))
 
-            rollback_migration(engine, connection, path, rollback)
+            rollback_migration(engine, connection, path, rollback, dry_run=dry_run)
         else:
-            print(' * Applying migrations for %s (`%s` on %s)' %
-                  (tag, db, engine))
+            print(' * %s for %s (`%s` on %s)' %
+                  ('Performing dry run of migrations' if dry_run else 'Applying migrations', tag, db, engine))
 
-            apply_migrations(engine, connection, path)
+            apply_migrations(engine, connection, path, dry_run=dry_run)
 
         # Run post migration queries
-        if post_migration:
+        if post_migration and not dry_run:
             run_migration(connection, post_migration)
 
     return True
@@ -388,9 +404,11 @@ def main():
                         help="Rollback a migration")
     parser.add_argument("-s", "--skip_missing", action='store_true',
                         help="Skip missing migration folders")
+    parser.add_argument("-d", "--dry-run", action='store_true',
+                        help="List migrations that would be applied but do not apply them")
     args = parser.parse_args()
 
-    apply(args.config, args.tag, args.rollback, args.skip_missing)
+    apply(args.config, args.tag, args.rollback, args.skip_missing, args.dry_run)
 
 
 if __name__ == "__main__":
