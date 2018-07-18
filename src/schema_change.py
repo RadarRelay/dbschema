@@ -351,7 +351,7 @@ def apply(config_override=None, tag_override=None, rollback=None, skip_missing=N
         # Set vars
         engine = databases[tag].get('engine', 'mysql')
         host = databases[tag].get('host', os.getenv('MYSQL_HOST', 'localhost'))
-        port = databases[tag].get('port', int(os.getenv('MYSQL_PORT', 3306))
+        port = databases[tag].get('port', int(os.getenv('MYSQL_PORT', 3306)))
         user = databases[tag].get('user', os.getenv('MYSQL_USER'))
         password = databases[tag].get('password', os.getenv('MYSQL_PASS'))
         db = databases[tag].get('db', os.getenv('MYSQL_DB'))
