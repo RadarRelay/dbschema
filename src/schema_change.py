@@ -350,11 +350,11 @@ def apply(config_override=None, tag_override=None, rollback=None, skip_missing=N
 
         # Set vars
         engine = databases[tag].get('engine', 'mysql')
-        host = databases[tag].get('host', 'localhost')
-        port = databases[tag].get('port', 3306)
-        user = databases[tag]['user']
-        password = databases[tag]['password']
-        db = databases[tag]['db']
+        host = databases[tag].get('host', os.getenv('MYSQL_HOST', 'localhost'))
+        port = databases[tag].get('port', int(os.getenv('MYSQL_PORT', 3306))
+        user = databases[tag].get('user', os.getenv('MYSQL_USER'))
+        password = databases[tag].get('password', os.getenv('MYSQL_PASS'))
+        db = databases[tag].get('db', os.getenv('MYSQL_DB'))
         path = add_slash(databases[tag]['path'])
         pre_migration = databases[tag].get('pre_migration', None)
         post_migration = databases[tag].get('post_migration', None)
